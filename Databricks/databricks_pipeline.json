@@ -1,0 +1,136 @@
+{
+  "name": "fact_sales_job",
+  "email_notifications": {
+    "no_alert_for_skipped_runs": false
+  },
+  "webhook_notifications": {},
+  "timeout_seconds": 0,
+  "max_concurrent_runs": 1,
+  "tasks": [
+    {
+      "task_key": "Silver",
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/1965sumesh@gmail.com/CarsProject/Silver Notebook",
+        "source": "WORKSPACE"
+      },
+      "existing_cluster_id": "0710-160008-byhkcac2",
+      "timeout_seconds": 0,
+      "email_notifications": {},
+      "webhook_notifications": {}
+    },
+    {
+      "task_key": "dim_branch",
+      "depends_on": [
+        {
+          "task_key": "Silver"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/1965sumesh@gmail.com/CarsProject/gold_dim_branch",
+        "base_parameters": {
+          "incremental_flag": "1"
+        },
+        "source": "WORKSPACE"
+      },
+      "existing_cluster_id": "0710-160008-byhkcac2",
+      "timeout_seconds": 0,
+      "email_notifications": {},
+      "webhook_notifications": {}
+    },
+    {
+      "task_key": "dim_date",
+      "depends_on": [
+        {
+          "task_key": "Silver"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/1965sumesh@gmail.com/CarsProject/gold_dim_date",
+        "base_parameters": {
+          "incremental_flag": "1"
+        },
+        "source": "WORKSPACE"
+      },
+      "existing_cluster_id": "0710-160008-byhkcac2",
+      "timeout_seconds": 0,
+      "email_notifications": {},
+      "webhook_notifications": {}
+    },
+    {
+      "task_key": "dim_dealer",
+      "depends_on": [
+        {
+          "task_key": "Silver"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/1965sumesh@gmail.com/CarsProject/gold_dim_dealer",
+        "base_parameters": {
+          "incremental_flag": "1"
+        },
+        "source": "WORKSPACE"
+      },
+      "existing_cluster_id": "0710-160008-byhkcac2",
+      "timeout_seconds": 0,
+      "email_notifications": {},
+      "webhook_notifications": {}
+    },
+    {
+      "task_key": "dim_model",
+      "depends_on": [
+        {
+          "task_key": "Silver"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/1965sumesh@gmail.com/CarsProject/gold_dim_model",
+        "base_parameters": {
+          "incremental_flag": "1"
+        },
+        "source": "WORKSPACE"
+      },
+      "existing_cluster_id": "0710-160008-byhkcac2",
+      "timeout_seconds": 0,
+      "email_notifications": {},
+      "webhook_notifications": {}
+    },
+    {
+      "task_key": "fact_Sales",
+      "depends_on": [
+        {
+          "task_key": "dim_model"
+        },
+        {
+          "task_key": "dim_branch"
+        },
+        {
+          "task_key": "dim_date"
+        },
+        {
+          "task_key": "dim_dealer"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Users/1965sumesh@gmail.com/CarsProject/gold_fact_sales",
+        "source": "WORKSPACE"
+      },
+      "existing_cluster_id": "0710-160008-byhkcac2",
+      "timeout_seconds": 0,
+      "email_notifications": {},
+      "webhook_notifications": {}
+    }
+  ],
+  "queue": {
+    "enabled": true
+  },
+  "performance_target": "STANDARD",
+  "run_as": {
+    "user_name": "1965sumesh@gmail.com"
+  }
+}
