@@ -1,0 +1,174 @@
+{
+    "name": "IncrementalDataPipeline",
+    "properties": {
+        "activities": [
+            {
+                "name": "CopyCarSalesData",
+                "type": "Copy",
+                "dependsOn": [
+                    {
+                        "activity": "Current_date",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    },
+                    {
+                        "activity": "last_load_date",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "AzureSqlSource",
+                        "sqlReaderQuery": {
+                            "value": "SELECT * FROM car_source_data WHERE DATE_ID > '@{activity('last_load_date').output.value[0].last_load}' AND DATE_ID <= '@{activity('Current_date').output.value[0].max_date}'",
+                            "type": "Expression"
+                        },
+                        "queryTimeout": "02:00:00",
+                        "partitionOption": "None"
+                    },
+                    "sink": {
+                        "type": "ParquetSink",
+                        "storeSettings": {
+                            "type": "AzureBlobFSWriteSettings"
+                        },
+                        "formatSettings": {
+                            "type": "ParquetWriteSettings"
+                        }
+                    },
+                    "enableStaging": false,
+                    "translator": {
+                        "type": "TabularTranslator",
+                        "typeConversion": true,
+                        "typeConversionSettings": {
+                            "allowDataTruncation": true,
+                            "treatBooleanAsNumber": false
+                        }
+                    }
+                },
+                "inputs": [
+                    {
+                        "referenceName": "dataInTable",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "table_name": "car_source_data"
+                        }
+                    }
+                ],
+                "outputs": [
+                    {
+                        "referenceName": "rawdataInAzureDataLake",
+                        "type": "DatasetReference"
+                    }
+                ]
+            },
+            {
+                "name": "last_load_date",
+                "type": "Lookup",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "AzureSqlSource",
+                        "sqlReaderQuery": "Select last_load from water_table",
+                        "queryTimeout": "02:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "dataInTable",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "table_name": "water_table"
+                        }
+                    },
+                    "firstRowOnly": false
+                }
+            },
+            {
+                "name": "Current_date",
+                "type": "Lookup",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "AzureSqlSource",
+                        "sqlReaderQuery": "SELECT MAX(DATE_ID) AS MAX_DATE FROM car_source_data",
+                        "queryTimeout": "02:00:00",
+                        "partitionOption": "None"
+                    },
+                    "dataset": {
+                        "referenceName": "dataInTable",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "table_name": "car_source_data"
+                        }
+                    },
+                    "firstRowOnly": false
+                }
+            },
+            {
+                "name": "UpdateWatermarkTable",
+                "type": "SqlServerStoredProcedure",
+                "dependsOn": [
+                    {
+                        "activity": "CopyCarSalesData",
+                        "dependencyConditions": [
+                            "Succeeded"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "storedProcedureName": "[dbo].[updateWatermarkTable]",
+                    "storedProcedureParameters": {
+                        "last_load": {
+                            "value": {
+                                "value": "@activity('Current_date').output.value[0].max_date",
+                                "type": "Expression"
+                            },
+                            "type": "String"
+                        }
+                    }
+                },
+                "linkedServiceName": {
+                    "referenceName": "LSToSqlDatabase",
+                    "type": "LinkedServiceReference"
+                }
+            }
+        ],
+        "annotations": [],
+        "lastPublishTime": "2025-07-09T17:01:59Z"
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
